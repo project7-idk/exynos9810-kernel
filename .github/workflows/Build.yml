@@ -3,6 +3,10 @@ name: Apollo Kernel Build
 on:
   workflow_dispatch:
     inputs:
+      devices:
+        description: "Select devices to build (comma separated, e.g., starlte,star2lte)"
+        required: true
+        default: "starlte,star2lte,crownlte"
       compiler:
         description: "Compiler"
         required: true
@@ -11,7 +15,6 @@ on:
         options:
           - "3"   # clang 18
           - "7"   # clang 20
-
       clean:
         description: "Clean build?"
         required: true
@@ -20,7 +23,6 @@ on:
         options:
           - "y"
           - "n"
-
       selinux:
         description: "SELinux mode"
         required: true
@@ -34,14 +36,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 240
-
     strategy:
       fail-fast: false
       matrix:
-        device:
-          - { name: starlte,    target: 1 }
-          - { name: star2lte,   target: 2 }
-          - { name: crownlte,   target: 3 }
+        device: [starlte, star2lte, crownlte, starltekor, star2ltekor, crownltekor]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,27 +53,34 @@ jobs:
             unzip zip zstd wget cpio \
             python3 python-is-python3
 
+      - name: Filter selected devices
+        id: filter
+        run: |
+          SELECTED="${{ github.event.inputs.devices }}"
+          echo "Selected devices: $SELECTED"
+          if [[ ! "$SELECTED" =~ "${{ matrix.device }}" ]]; then
+            echo "Skipping ${{ matrix.device }}"
+            exit 78  # GitHub skips the job gracefully
+          fi
+
       - name: Make script executable
         run: chmod +x apollo.sh
 
       - name: Build kernel
         env:
-          CR_TARGET:   ${{ matrix.device.target }}
-          CR_COMPILER: ${{ inputs.compiler }}
-          CR_CLEAN:    ${{ inputs.clean }}
-          CR_SELINUX:  ${{ inputs.selinux }}
-          CR_KSU:      "y"
+          CR_TARGET: ${{ matrix.device == 'starlte' && echo 1 || matrix.device == 'star2lte' && echo 2 || matrix.device == 'crownlte' && echo 3 || matrix.device == 'starltekor' && echo 4 || matrix.device == 'star2ltekor' && echo 5 || matrix.device == 'crownltekor' && echo 6 }}
+          CR_COMPILER: ${{ github.event.inputs.compiler }}
+          CR_CLEAN: ${{ github.event.inputs.clean }}
+          CR_SELINUX: ${{ github.event.inputs.selinux }}
+          CR_KSU: "y"
         run: |
-          echo "Device   : ${{ matrix.device.name }}"
-          echo "Compiler : $CR_COMPILER"
-          echo "Clean    : $CR_CLEAN"
-          echo "SELinux  : $CR_SELINUX"
+          echo "Building ${{ matrix.device }}"
           ./apollo.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Apollo-${{ matrix.device.name }}-clang${{ inputs.compiler }}-clean${{ inputs.clean }}-selinux${{ inputs.selinux }}
+          name: Apollo-${{ matrix.device }}-clang${{ github.event.inputs.compiler }}-clean${{ github.event.inputs.clean }}-selinux${{ github.event.inputs.selinux }}
           path: |
             Apollo/Out/*.img
             Apollo/Product/*.img
