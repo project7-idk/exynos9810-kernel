@@ -1,0 +1,83 @@
+name: Apollo Kernel Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - { name: starlte,    target: 1 }
+          - { name: star2lte,   target: 2 }
+          - { name: crownlte,   target: 3 }
+          - { name: starltekor, target: 4 }
+          - { name: star2ltekor,target: 5 }
+          - { name: crownltekor,target: 6 }
+
+        compiler:
+          - { name: clang18, value: 3 }
+          - { name: clang20, value: 7 }
+
+        clean:
+          - { name: clean, value: y }
+          - { name: dirty, value: n }
+
+        selinux:
+          - { name: permissive, value: 1 }
+          - { name: enforcing,  value: 2 }
+
+    name: >
+      ${{ matrix.device.name }} |
+      ${{ matrix.compiler.name }} |
+      ${{ matrix.clean.name }} |
+      selinux-${{ matrix.selinux.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            bc bison build-essential curl flex git \
+            libssl-dev libelf-dev dwarves \
+            unzip zip zstd wget cpio \
+            python3 python-is-python3
+
+      - name: Make script executable
+        run: chmod +x build.sh
+
+      - name: Build kernel
+        env:
+          CR_TARGET:   ${{ matrix.device.target }}
+          CR_COMPILER: ${{ matrix.compiler.value }}
+          CR_CLEAN:    ${{ matrix.clean.value }}
+          CR_SELINUX:  ${{ matrix.selinux.value }}
+          CR_KSU:      "y"
+        run: |
+          echo "Device   : $CR_TARGET"
+          echo "Compiler : $CR_COMPILER"
+          echo "Clean    : $CR_CLEAN"
+          echo "SELinux  : $CR_SELINUX"
+          ./build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: >
+            Apollo-${{ matrix.device.name }}-
+            ${{ matrix.compiler.name }}-
+            ${{ matrix.clean.name }}-
+            selinux-${{ matrix.selinux.name }}
+          path: |
+            Apollo/Out/*.img
+            Apollo/Product/*.img
