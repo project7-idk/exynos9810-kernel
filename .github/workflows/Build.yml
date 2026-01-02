@@ -24,15 +24,13 @@ jobs:
 
       - name: Build starlte kernel
         run: |
-          # Device and build config
-          CR_TARGET=1          # starlte
-          CR_COMPILER=3        # clang 18
-          CR_CLEAN=y           # clean build
-          CR_SELINUX=1         # permissive
-          CR_KSU=n             # no KernelSU
-
-          echo "Building Starlte kernel"
-          ./apollo.sh
+         export CR_TARGET=1          # starlte
+         export CR_COMPILER=3        # clang 18
+         export CR_CLEAN=y           # clean build
+         export CR_SELINUX=1         # permissive
+         export CR_KSU=n             # no KernelSU
+         export TERM=xterm            # avoids TERM error
+         ./apollo.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
