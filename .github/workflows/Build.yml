@@ -4,33 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       devices:
-        description: "Select devices to build (comma separated, e.g., starlte,star2lte,crownlte)"
+        description: "Comma-separated devices to build: starlte,star2lte,crownlte"
         required: true
         default: "starlte,star2lte,crownlte"
       compiler:
-        description: "Compiler"
+        description: "Compiler (3=clang18, 7=clang20)"
         required: true
         default: "3"
-        type: choice
-        options:
-          - "3"   # clang 18
-          - "7"   # clang 20
       clean:
-        description: "Clean build?"
+        description: "Clean build? (y/n)"
         required: true
         default: "n"
-        type: choice
-        options:
-          - "y"
-          - "n"
       selinux:
-        description: "SELinux mode"
+        description: "SELinux mode (1=permissive, 2=enforcing)"
         required: true
         default: "2"
-        type: choice
-        options:
-          - "1"   # permissive
-          - "2"   # enforcing
 
 jobs:
   build:
@@ -39,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: [starlte, star2lte, crownlte, starltekor, star2ltekor, crownltekor]
+        device: [starlte, star2lte, crownlte]
 
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +35,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y \
-            bc bison build-essential curl flex git \
-            libssl-dev libelf-dev dwarves \
-            unzip zip zstd wget cpio \
+          sudo apt install -y bc bison build-essential curl flex git \
+            libssl-dev libelf-dev dwarves unzip zip zstd wget cpio \
             python3 python-is-python3
 
       - name: Filter selected devices
@@ -59,7 +45,7 @@ jobs:
           SELECTED="${{ github.event.inputs.devices }}"
           if [[ ! "$SELECTED" =~ "${{ matrix.device }}" ]]; then
             echo "Skipping ${{ matrix.device }}"
-            exit 78  # GitHub skips the job gracefully
+            exit 78  # skipped job
           fi
 
       - name: Make script executable
@@ -72,14 +58,11 @@ jobs:
           CR_SELINUX: ${{ github.event.inputs.selinux }}
           CR_KSU: "y"
         run: |
-          # Map device name to CR_TARGET
+          # Map device to CR_TARGET
           case "${{ matrix.device }}" in
             starlte) CR_TARGET=1 ;;
             star2lte) CR_TARGET=2 ;;
             crownlte) CR_TARGET=3 ;;
-            starltekor) CR_TARGET=4 ;;
-            star2ltekor) CR_TARGET=5 ;;
-            crownltekor) CR_TARGET=6 ;;
           esac
 
           echo "Building ${{ matrix.device }} (CR_TARGET=$CR_TARGET)"
