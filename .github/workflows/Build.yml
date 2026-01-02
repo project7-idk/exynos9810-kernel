@@ -1,7 +1,10 @@
 name: Apollo Kernel Build - Starlte Clean Permissive
 
 on:
-  workflow_dispatch:  # manual trigger
+  workflow_dispatch: 
+  push:
+    branches:
+     - wip
 
 jobs:
   build-starlte-clean:
