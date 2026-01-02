@@ -576,6 +576,14 @@ if ! dpkg-query -W -f='${Status}' bsdiff  | grep "ok installed"; then
 	fi
 fi
 
+# CI MODE 
+if [[ -n "$CR_TARGET" && -n "$CR_COMPILER" ]]; then
+    echo "CI mode – skipping menu"
+    BUILD
+    exit 0
+fi
+
+
 # Initalize with base image (Starlte)
 if [ "$CR_TARGET" = "1" ]; then # Always must run ONCE during BUILD_ALL otherwise fail. Setup directories
 	echo " "
