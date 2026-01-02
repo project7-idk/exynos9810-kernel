@@ -1,34 +1,11 @@
-name: Apollo Kernel Build
+name: Apollo Kernel Build - Starlte Clean Permissive
 
 on:
-  workflow_dispatch:
-    inputs:
-      devices:
-        description: "Comma-separated devices to build: starlte,star2lte,crownlte"
-        required: true
-        default: "starlte,star2lte,crownlte"
-      compiler:
-        description: "Compiler (3=clang18, 7=clang20)"
-        required: true
-        default: "3"
-      clean:
-        description: "Clean build? (y/n)"
-        required: true
-        default: "n"
-      selinux:
-        description: "SELinux mode (1=permissive, 2=enforcing)"
-        required: true
-        default: "2"
+  workflow_dispatch:  # manual trigger
 
 jobs:
-  build:
+  build-starlte-clean:
     runs-on: ubuntu-22.04
-    timeout-minutes: 240
-    strategy:
-      fail-fast: false
-      matrix:
-        device: [starlte, star2lte, crownlte]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -39,39 +16,25 @@ jobs:
             libssl-dev libelf-dev dwarves unzip zip zstd wget cpio \
             python3 python-is-python3
 
-      - name: Filter selected devices
-        id: filter
-        run: |
-          SELECTED="${{ github.event.inputs.devices }}"
-          if [[ ! "$SELECTED" =~ "${{ matrix.device }}" ]]; then
-            echo "Skipping ${{ matrix.device }}"
-            exit 78  # skipped job
-          fi
-
       - name: Make script executable
         run: chmod +x apollo.sh
 
-      - name: Build kernel
-        env:
-          CR_COMPILER: ${{ github.event.inputs.compiler }}
-          CR_CLEAN: ${{ github.event.inputs.clean }}
-          CR_SELINUX: ${{ github.event.inputs.selinux }}
-          CR_KSU: "y"
+      - name: Build starlte kernel
         run: |
-          # Map device to CR_TARGET
-          case "${{ matrix.device }}" in
-            starlte) CR_TARGET=1 ;;
-            star2lte) CR_TARGET=2 ;;
-            crownlte) CR_TARGET=3 ;;
-          esac
+          # Device and build config
+          CR_TARGET=1          # starlte
+          CR_COMPILER=3        # clang 18
+          CR_CLEAN=y           # clean build
+          CR_SELINUX=1         # permissive
+          CR_KSU=n             # no KernelSU
 
-          echo "Building ${{ matrix.device }} (CR_TARGET=$CR_TARGET)"
+          echo "Building Starlte kernel"
           ./apollo.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Apollo-${{ matrix.device }}-clang${{ github.event.inputs.compiler }}-clean${{ github.event.inputs.clean }}-selinux${{ github.event.inputs.selinux }}
+          name: Apollo-Starlte-Clean-Permissive
           path: |
             Apollo/Out/*.img
             Apollo/Product/*.img
