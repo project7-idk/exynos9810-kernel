@@ -65,16 +65,23 @@ jobs:
 
       - name: Make script executable
         run: chmod +x apollo.sh
-
+        
       - name: Build kernel
         env:
-          CR_TARGET: ${{ matrix.device == 'starlte' && echo 1 || matrix.device == 'star2lte' && echo 2 || matrix.device == 'crownlte' && echo 3 || matrix.device == 'starltekor' && echo 4 || matrix.device == 'star2ltekor' && echo 5 || matrix.device == 'crownltekor' && echo 6 }}
           CR_COMPILER: ${{ github.event.inputs.compiler }}
           CR_CLEAN: ${{ github.event.inputs.clean }}
           CR_SELINUX: ${{ github.event.inputs.selinux }}
           CR_KSU: "y"
         run: |
-          echo "Building ${{ matrix.device }}"
+          # Map device name to CR_TARGET
+          if [ "${{ matrix.device }}" = "starlte" ]; then CR_TARGET=1; fi
+          if [ "${{ matrix.device }}" = "star2lte" ]; then CR_TARGET=2; fi
+          if [ "${{ matrix.device }}" = "crownlte" ]; then CR_TARGET=3; fi
+          if [ "${{ matrix.device }}" = "starltekor" ]; then CR_TARGET=4; fi
+          if [ "${{ matrix.device }}" = "star2ltekor" ]; then CR_TARGET=5; fi
+          if [ "${{ matrix.device }}" = "crownltekor" ]; then CR_TARGET=6; fi
+
+          echo "Building ${{ matrix.device }} (CR_TARGET=$CR_TARGET)"
           ./apollo.sh
 
       - name: Upload artifacts
