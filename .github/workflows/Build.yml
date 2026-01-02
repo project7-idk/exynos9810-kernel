@@ -3,7 +3,8 @@ name: Apollo Kernel Build
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: 
+    - wip
 
 jobs:
   build:
