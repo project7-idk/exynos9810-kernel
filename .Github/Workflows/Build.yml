@@ -54,7 +54,7 @@ jobs:
             python3 python-is-python3
 
       - name: Make script executable
-        run: chmod +x build.sh
+        run: chmod +x apollo.sh
 
       - name: Build kernel
         env:
