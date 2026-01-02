@@ -3,7 +3,8 @@ name: Apollo Kernel Build - Starlte
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: 
+    - wip
 
 jobs:
   build-starlte:
