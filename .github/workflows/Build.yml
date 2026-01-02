@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       devices:
-        description: "Select devices to build (comma separated, e.g., starlte,star2lte)"
+        description: "Select devices to build (comma separated, e.g., starlte,star2lte,crownlte)"
         required: true
         default: "starlte,star2lte,crownlte"
       compiler:
@@ -57,7 +57,6 @@ jobs:
         id: filter
         run: |
           SELECTED="${{ github.event.inputs.devices }}"
-          echo "Selected devices: $SELECTED"
           if [[ ! "$SELECTED" =~ "${{ matrix.device }}" ]]; then
             echo "Skipping ${{ matrix.device }}"
             exit 78  # GitHub skips the job gracefully
@@ -65,7 +64,7 @@ jobs:
 
       - name: Make script executable
         run: chmod +x apollo.sh
-        
+
       - name: Build kernel
         env:
           CR_COMPILER: ${{ github.event.inputs.compiler }}
@@ -74,12 +73,14 @@ jobs:
           CR_KSU: "y"
         run: |
           # Map device name to CR_TARGET
-          if [ "${{ matrix.device }}" = "starlte" ]; then CR_TARGET=1; fi
-          if [ "${{ matrix.device }}" = "star2lte" ]; then CR_TARGET=2; fi
-          if [ "${{ matrix.device }}" = "crownlte" ]; then CR_TARGET=3; fi
-          if [ "${{ matrix.device }}" = "starltekor" ]; then CR_TARGET=4; fi
-          if [ "${{ matrix.device }}" = "star2ltekor" ]; then CR_TARGET=5; fi
-          if [ "${{ matrix.device }}" = "crownltekor" ]; then CR_TARGET=6; fi
+          case "${{ matrix.device }}" in
+            starlte) CR_TARGET=1 ;;
+            star2lte) CR_TARGET=2 ;;
+            crownlte) CR_TARGET=3 ;;
+            starltekor) CR_TARGET=4 ;;
+            star2ltekor) CR_TARGET=5 ;;
+            crownltekor) CR_TARGET=6 ;;
+          esac
 
           echo "Building ${{ matrix.device }} (CR_TARGET=$CR_TARGET)"
           ./apollo.sh
