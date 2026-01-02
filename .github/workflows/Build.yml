@@ -2,48 +2,49 @@ name: Apollo Kernel Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: 
-    - wip
+    inputs:
+      compiler:
+        description: "Compiler"
+        required: true
+        default: "3"
+        type: choice
+        options:
+          - "3"   # clang 18
+          - "7"   # clang 20
+
+      clean:
+        description: "Clean build?"
+        required: true
+        default: "n"
+        type: choice
+        options:
+          - "y"
+          - "n"
+
+      selinux:
+        description: "SELinux mode"
+        required: true
+        default: "2"
+        type: choice
+        options:
+          - "1"   # permissive
+          - "2"   # enforcing
 
 jobs:
   build:
-    name: >
-      ${{ matrix.device.name }} |
-      ${{ matrix.compiler.name }} |
-      ${{ matrix.clean.name }} |
-      selinux-${{ matrix.selinux.name }}
-
     runs-on: ubuntu-22.04
-    timeout-minutes: 360
+    timeout-minutes: 240
 
     strategy:
       fail-fast: false
       matrix:
         device:
-          - { name: starlte,     target: 1 }
-          - { name: star2lte,    target: 2 }
-          - { name: crownlte,    target: 3 }
-          - { name: starltekor,  target: 4 }
-          - { name: star2ltekor, target: 5 }
-          - { name: crownltekor, target: 6 }
-
-        compiler:
-          - { name: clang18, value: 3 }
-          - { name: clang20, value: 7 }
-
-        clean:
-          - { name: clean, value: y }
-          - { name: dirty, value: n }
-
-        selinux:
-          - { name: permissive, value: 1 }
-          - { name: enforcing,  value: 2 }
+          - { name: starlte,    target: 1 }
+          - { name: star2lte,   target: 2 }
+          - { name: crownlte,   target: 3 }
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -60,12 +61,12 @@ jobs:
       - name: Build kernel
         env:
           CR_TARGET:   ${{ matrix.device.target }}
-          CR_COMPILER: ${{ matrix.compiler.value }}
-          CR_CLEAN:    ${{ matrix.clean.value }}
-          CR_SELINUX:  ${{ matrix.selinux.value }}
+          CR_COMPILER: ${{ inputs.compiler }}
+          CR_CLEAN:    ${{ inputs.clean }}
+          CR_SELINUX:  ${{ inputs.selinux }}
           CR_KSU:      "y"
         run: |
-          echo "Device   : $CR_TARGET"
+          echo "Device   : ${{ matrix.device.name }}"
           echo "Compiler : $CR_COMPILER"
           echo "Clean    : $CR_CLEAN"
           echo "SELinux  : $CR_SELINUX"
@@ -74,11 +75,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: >
-            Apollo-${{ matrix.device.name }}-
-            ${{ matrix.compiler.name }}-
-            ${{ matrix.clean.name }}-
-            selinux-${{ matrix.selinux.name }}
+          name: Apollo-${{ matrix.device.name }}-clang${{ inputs.compiler }}-clean${{ inputs.clean }}-selinux${{ inputs.selinux }}
           path: |
             Apollo/Out/*.img
             Apollo/Product/*.img
