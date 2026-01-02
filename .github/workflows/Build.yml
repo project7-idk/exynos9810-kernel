@@ -7,37 +7,37 @@ on:
 
 jobs:
   build:
+    name: >
+      ${{ matrix.device.name }} |
+      ${{ matrix.compiler.name }} |
+      ${{ matrix.clean.name }} |
+      selinux-${{ matrix.selinux.name }}
+
     runs-on: ubuntu-22.04
     timeout-minutes: 360
 
     strategy:
       fail-fast: false
       matrix:
-      device:
+        device:
           - { name: starlte,     target: 1 }
           - { name: star2lte,    target: 2 }
           - { name: crownlte,    target: 3 }
           - { name: starltekor,  target: 4 }
           - { name: star2ltekor, target: 5 }
           - { name: crownltekor, target: 6 }
-          
-          compiler:
+
+        compiler:
           - { name: clang18, value: 3 }
           - { name: clang20, value: 7 }
-          
-          clean:
+
+        clean:
           - { name: clean, value: y }
           - { name: dirty, value: n }
-          
-          selinux:
+
+        selinux:
           - { name: permissive, value: 1 }
           - { name: enforcing,  value: 2 }
-
-    name: >
-      ${{ matrix.device.name }} |
-      ${{ matrix.compiler.name }} |
-      ${{ matrix.clean.name }} |
-      selinux-${{ matrix.selinux.name }}
 
     steps:
       - uses: actions/checkout@v4
