@@ -1,37 +1,59 @@
-name: Apollo Kernel Build - Starlte Clean Permissive
+name: Apollo Kernel Build - Starlte
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   push:
-    branches:
-     - wip
+    branches: [ main ]
 
 jobs:
-  build-starlte-clean:
+  build-starlte:
     runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 360
 
-      - name: Install dependencies
+    steps:
+      # Checkout repo
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Install dependencies
+      - name: Install build dependencies
         run: |
           sudo apt update
-          sudo apt install -y bc bison build-essential curl flex git \
-            libssl-dev libelf-dev dwarves unzip zip zstd wget cpio \
+          sudo apt install -y \
+            bc bison build-essential curl flex git \
+            libssl-dev libelf-dev dwarves \
+            unzip zip zstd wget cpio \
             python3 python-is-python3
 
-      - name: Make script executable
+      # Setup compiler
+      - name: Setup Clang 18
+        run: |
+          mkdir -p ../compiler/clang-18.0.1-r522817
+          # Optional: download prebuilt if you want
+          # wget -qO- https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r522817/clang-r522817.tar.gz | tar -xz -C ../compiler/clang-18.0.1-r522817
+          echo "Fake bin/lib folders created to satisfy script" 
+          mkdir -p ../compiler/clang-18.0.1-r522817/bin
+          mkdir -p ../compiler/clang-18.0.1-r522817/lib
+
+      # Make the build script executable
+      - name: Make Apollo script executable
         run: chmod +x apollo.sh
 
-      - name: Build starlte kernel
+      # Run non-interactive build
+      - name: Build kernel (Starlte, Clean, No KSU, Permissive)
+        env:
+          CR_TARGET: 1        # Starlte
+          CR_COMPILER: 3      # Clang 18
+          CR_SELINUX: 1       # Permissive
+          CR_KSU: n           # No KernelSU
+          CR_CLEAN: y         # Clean build
+          CI_BUILD: 1         # Non-interactive flag
+          TERM: xterm         # Avoid TERM warnings
         run: |
-         export CR_TARGET=1          # starlte
-         export CR_COMPILER=3        # clang 18
-         export CR_CLEAN=y           # clean build
-         export CR_SELINUX=1         # permissive
-         export CR_KSU=n             # no KernelSU
-         export TERM=xterm            # avoids TERM error
-         ./apollo.sh
+          ./apollo.sh
 
+      # Upload the built images
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
