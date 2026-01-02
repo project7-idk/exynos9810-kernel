@@ -13,23 +13,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-         device:
-          - { name: starlte,    target: 1 }
-          - { name: star2lte,   target: 2 }
-          - { name: crownlte,   target: 3 }
-          - { name: starltekor, target: 4 }
-          - { name: star2ltekor,target: 5 }
-          - { name: crownltekor,target: 6 }
-
-        compiler:
+      device:
+          - { name: starlte,     target: 1 }
+          - { name: star2lte,    target: 2 }
+          - { name: crownlte,    target: 3 }
+          - { name: starltekor,  target: 4 }
+          - { name: star2ltekor, target: 5 }
+          - { name: crownltekor, target: 6 }
+          
+          compiler:
           - { name: clang18, value: 3 }
           - { name: clang20, value: 7 }
-
-        clean:
+          
+          clean:
           - { name: clean, value: y }
           - { name: dirty, value: n }
           
-        selinux:
+          selinux:
           - { name: permissive, value: 1 }
           - { name: enforcing,  value: 2 }
 
